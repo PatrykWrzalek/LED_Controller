@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**LED_Controller** is a versatile ESP32-C6 based project designed for advanced LED strip control. The system integrates multiple LED types, including **COLD**, **WARM** (PWM controlled), and **WS2812 addressable RGB LEDs**, and can be controlled via both **IR remote (NEC protocol)** and **smartphone over WiFi**.  
+**LED_Controller** is a versatile ESP32-C6 based project designed for advanced LED strip control. The system integrates multiple LED types, including light **COLD**, **WARM** (PWM controlled), and **WS2812 addressable RGB LEDs**, and can be controlled via both **IR remote (NEC protocol)** and **smartphone over WiFi**.  
 
 Key project features:
 - Multi-tasking architecture using **FreeRTOS**.
