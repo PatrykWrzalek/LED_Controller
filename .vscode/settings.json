@@ -7,7 +7,8 @@
   ],
   "idf.customExtraVars": {
     "OPENOCD_SCRIPTS": "C:\\Users\\Patryk\\.espressif\\tools\\openocd-esp32\\v0.10.0-esp32-20190708/openocd-esp32/share/openocd/scripts",
-    "OPENOCD_USB_ADAPTER_LOCATION": "2-2",
-    "IDF_TARGET": "esp32c6"
-  }
+    "IDF_TARGET": "esp32c6",
+    "OPENOCD_USB_ADAPTER_LOCATION": "2-2"
+  },
+  "idf.flashType": "UART"
 }
