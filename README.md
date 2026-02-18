@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**LED_Controller** is a versatile ESP32-C6 based project designed for advanced LED strip control. The system integrates multiple LED types, including **White**, **Yellow** (PWM controlled), and **WS2812 addressable RGB LEDs**, and can be controlled via both **IR remote (NEC protocol)** and **smartphone over WiFi**.  
+**LED_Controller** is a versatile ESP32-C6 based project designed for advanced LED strip control. The system integrates multiple LED types, including **COLD**, **WARM** (PWM controlled), and **WS2812 addressable RGB LEDs**, and can be controlled via both **IR remote (NEC protocol)** and **smartphone over WiFi**.  
 
 Key project features:
 - Multi-tasking architecture using **FreeRTOS**.
@@ -27,7 +27,7 @@ Track progress with the checkboxes below:
 - [ ] Console setup for early debugging  
 - [ ] Watchdog integration  
 - [ ] FreeRTOS task architecture & event queues  
-- [ ] PWM LED control (White & Yellow)  
+- [ ] PWM LED control (light COLD & WARM)  
 - [ ] WS2812 LED control (RMT)  
 - [ ] IR NEC remote control  
 - [ ] NVS settings storage  
@@ -58,8 +58,8 @@ Communication between tasks is fully **event-driven** via FreeRTOS queues, ensur
 
 - ESP32-C6 (Seeed Studio development board recommended)  
 - LED Types:
-  - White LED (PWM)
-  - Yellow LED (PWM)
+  - COLD LED (PWM)
+  - WARM LED (PWM)
   - WS2812 addressable RGB LED strip
 - IR receiver (NEC protocol)
 
