@@ -12,5 +12,5 @@ list(REMOVE_DUPLICATES INCLUDE_DIRS_LIST)
 idf_component_register(
     SRCS ${SRC_FILES}
     INCLUDE_DIRS "."
-    REQUIRES spi_flash app event_bus drv_led
+    REQUIRES spi_flash app event_bus drv_led debug_console
 )
