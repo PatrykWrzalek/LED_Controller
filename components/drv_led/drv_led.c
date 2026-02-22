@@ -28,6 +28,8 @@ static void drv_led_task(void *arg);
 // API
 //--------------------------------------------------------------------------------------------
 
+#if CONFIG_DRV_LED_ENABLE
+
 void drv_led_init(void)
 {
     if (s_initialized)
@@ -39,7 +41,16 @@ void drv_led_init(void)
     ESP_LOGI(TAG, "Initializing LED PWM subsystem");
 
     drv_led_configure_timer();
-    drv_led_configure_channel(LED_CHANNEL_STATUS, LED_GPIO_STATUS);
+
+    drv_led_configure_channel(LED_CHANNEL_STATUS, CONFIG_LED_GPIO_STATUS);
+
+#if CONFIG_DRV_COLD_LED_ENABLE
+    drv_led_configure_channel(LED_CHANNEL_COLD, CONFIG_LED_GPIO_COLD);
+#endif
+
+#if CONFIG_DRV_WARM_LED_ENABLE
+    drv_led_configure_channel(LED_CHANNEL_WARM, CONFIG_LED_GPIO_WARM);
+#endif
 
     s_initialized = true;
 
@@ -54,6 +65,8 @@ void drv_led_start_task(QueueHandle_t queue)
 
     configASSERT(ret == pdPASS);
 }
+
+#endif
 
 //--------------------------------------------------------------------------------------------
 // STATIC

@@ -13,6 +13,8 @@
 //--------------------------------------------------------------------------------------------
 #include <stdio.h>
 
+#include "sdkconfig.h"
+
 #include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -29,10 +31,6 @@
 #define LED_CHANNEL_STATUS  LEDC_CHANNEL_0
 #define LED_CHANNEL_COLD    LEDC_CHANNEL_1
 #define LED_CHANNEL_WARM    LEDC_CHANNEL_2
-
-#define LED_GPIO_STATUS     15
-#define LED_GPIO_COLD       16
-#define LED_GPIO_WARM       17
 
 //--------------------------------------------------------------------------------------------
 // API
