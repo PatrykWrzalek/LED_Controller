@@ -36,6 +36,6 @@
 // API
 //--------------------------------------------------------------------------------------------
 void drv_led_init(void);
-void drv_led_start_task(QueueHandle_t queue);
+void drv_led_start_task(void);
 
 #endif /* DRV_LED_H */

@@ -13,6 +13,7 @@
 // Includes
 //--------------------------------------------------------------------------------------------
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -40,7 +41,9 @@ typedef struct
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
+
 void event_bus_init(void);
+bool event_bus_emit(const app_event_t *event);
 QueueHandle_t event_bus_get_queue(void);
 
 #endif /* EVENT_BUS_H */

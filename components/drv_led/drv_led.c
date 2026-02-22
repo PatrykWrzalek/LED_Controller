@@ -57,12 +57,9 @@ void drv_led_init(void)
     ESP_LOGI(TAG, "LED PWM initialized successfully");
 }
 
-void drv_led_start_task(QueueHandle_t queue)
+void drv_led_start_task(void)
 {
-    configASSERT(queue != NULL);
-
-    BaseType_t ret = xTaskCreate(drv_led_task, "led_task", 4096, queue, 2, NULL);
-
+    BaseType_t ret = xTaskCreate(drv_led_task, "led_task", 4096, NULL, 2, NULL);
     configASSERT(ret == pdPASS);
 }
 
@@ -118,7 +115,7 @@ static void drv_led_set_status(uint32_t duty)
 
 static void drv_led_task(void *arg)
 {
-    QueueHandle_t queue = (QueueHandle_t)arg;
+    QueueHandle_t queue = event_bus_get_queue();
     configASSERT(queue != NULL);
 
     app_event_t event;
@@ -134,12 +131,12 @@ static void drv_led_task(void *arg)
             {
                 case EVENT_LED_ON:
                     ESP_LOGI(TAG, "LED ON");
-                    drv_led_set_status(drv_led_max_duty());
+                    drv_led_set_status(0);
                     break;
 
                 case EVENT_LED_OFF:
                     ESP_LOGI(TAG, "LED OFF");
-                    drv_led_set_status(0);
+                    drv_led_set_status(drv_led_max_duty());
                     break;
 
                 case EVENT_LED_TOGGLE:

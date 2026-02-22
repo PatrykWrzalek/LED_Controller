@@ -110,21 +110,36 @@ static void register_commands(void)
 
 static int cmd_event1(int argc, char **argv)
 {
-    ESP_LOGI(TAG, "Wywołano event1");
-    // event_bus_emit(EVENT1);
+    app_event_t event = {
+        .type = EVENT_LED_ON
+    };
+
+    event_bus_emit(&event);
+
+    ESP_LOGI(TAG, "EVENT_LED_ON sent");
     return 0;
 }
 
 static int cmd_event2(int argc, char **argv)
 {
-    ESP_LOGI(TAG, "Wywołano event2");
-    // event_bus_emit(EVENT2);
+    app_event_t event = {
+        .type = EVENT_LED_OFF
+    };
+
+    event_bus_emit(&event);
+
+    ESP_LOGI(TAG, "EVENT_LED_OFF sent");
     return 0;
 }
 
 static int cmd_event3(int argc, char **argv)
 {
-    ESP_LOGI(TAG, "Wywołano event3");
-    // event_bus_emit(EVENT3);
+    app_event_t event = {
+        .type = EVENT_LED_TOGGLE
+    };
+
+    event_bus_emit(&event);
+
+    ESP_LOGI(TAG, "EVENT_LED_TOGGLE sent");
     return 0;
 }
