@@ -11,8 +11,8 @@
 // Variables
 //--------------------------------------------------------------------------------------------
 
-static const char *TAG = "LED";
-static bool s_initialized = false;
+static const char *TAG = "drv_led";
+static bool _is_initialized = false;
 
 //--------------------------------------------------------------------------------------------
 // Static function prototypes
@@ -32,7 +32,7 @@ static void drv_led_task(void *arg);
 
 void drv_led_init(void)
 {
-    if (s_initialized)
+    if (_is_initialized)
     {
         ESP_LOGW(TAG, "LED already initialized");
         return;
@@ -52,7 +52,7 @@ void drv_led_init(void)
     drv_led_configure_channel(LED_CHANNEL_WARM, CONFIG_LED_GPIO_WARM);
 #endif
 
-    s_initialized = true;
+    _is_initialized = true;
 
     ESP_LOGI(TAG, "LED PWM initialized successfully");
 }
@@ -61,6 +61,17 @@ void drv_led_start_task(void)
 {
     BaseType_t ret = xTaskCreate(drv_led_task, "led_task", 4096, NULL, 2, NULL);
     configASSERT(ret == pdPASS);
+}
+
+bool drv_led_request(drv_led_event_id_t id)
+{
+    app_event_t event = {
+        .module = APP_EVENT_MODULE_LED,
+        .id     = id,
+        .param  = 0
+    };
+
+    return event_bus_emit(&event);
 }
 
 #endif
@@ -103,7 +114,7 @@ static uint32_t drv_led_max_duty(void)
 
 static void drv_led_set_status(uint32_t duty)
 {
-    if (!s_initialized)
+    if (!_is_initialized)
         return;
 
     if (duty > drv_led_max_duty())
@@ -127,19 +138,24 @@ static void drv_led_task(void *arg)
     {
         if (xQueueReceive(queue, &event, portMAX_DELAY) == pdTRUE)
         {
-            switch (event.type)
+            if (event.module != APP_EVENT_MODULE_LED)
             {
-                case EVENT_LED_ON:
+                continue;
+            }
+
+            switch ((drv_led_event_id_t)event.id)
+            {
+                case DRV_LED_EVENT_ON:
                     ESP_LOGI(TAG, "LED ON");
                     drv_led_set_status(0);
                     break;
 
-                case EVENT_LED_OFF:
+                case DRV_LED_EVENT_OFF:
                     ESP_LOGI(TAG, "LED OFF");
                     drv_led_set_status(drv_led_max_duty());
                     break;
 
-                case EVENT_LED_TOGGLE:
+                case DRV_LED_EVENT_TOGGLE:
                     ESP_LOGI(TAG, "LED TOGGLE");
                     drv_led_set_status(drv_led_max_duty()/2);
                     break;

@@ -3,13 +3,10 @@
 //--------------------------------------------------------------------------------------------
 #include "debug_console.h"
 #include "event_bus.h"
+#include "drv_led.h"
 
 #include "esp_log.h"
-#include "esp_system.h"
 #include "esp_console.h"
-#include "esp_vfs_dev.h"
-
-#include "nvs.h"
 #include "nvs_flash.h"
 
 //--------------------------------------------------------------------------------------------
@@ -23,11 +20,11 @@
 //--------------------------------------------------------------------------------------------
 
 static void debug_console_task(void *arg);
-static void register_commands(void);
+static void debug_console_register_commands(void);
 
-static int cmd_event1(int argc, char **argv);
-static int cmd_event2(int argc, char **argv);
-static int cmd_event3(int argc, char **argv);
+static int cmd_led_on(int argc, char **argv);
+static int cmd_led_off(int argc, char **argv);
+static int cmd_led_toggle(int argc, char **argv);
 
 //--------------------------------------------------------------------------------------------
 // Variables
@@ -42,8 +39,8 @@ static const char *TAG = "debug_console";
 void debug_console_init(void)
 {
     // NVS init
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
         nvs_flash_erase();
         nvs_flash_init();
@@ -51,9 +48,11 @@ void debug_console_init(void)
 
     esp_console_register_help_command();
 
-    register_commands();
+    debug_console_register_commands();
 
-    xTaskCreate(debug_console_task, "debug_console", 4096, NULL, 5, NULL);
+    BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", 4096, NULL, 5, NULL);
+
+    configASSERT(ret == pdPASS);
 }
 //--------------------------------------------------------------------------------------------
 // STATIC
@@ -77,69 +76,57 @@ static void debug_console_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void register_commands(void)
+static void debug_console_register_commands(void)
 {
-    const esp_console_cmd_t cmd1 = {
-        .command = "event1",
-        .help = "Wywołaj event1",
+    const esp_console_cmd_t led_on_cmd = {
+        .command = "led_on",
+        .help = "Turn LED ON",
         .hint = NULL,
-        .func = &cmd_event1,
+        .func = cmd_led_on,
         .argtable = NULL
     };
 
-    const esp_console_cmd_t cmd2 = {
-        .command = "event2",
-        .help = "Wywołaj event2",
+    const esp_console_cmd_t led_off_cmd = {
+        .command = "led_off",
+        .help = "Turn LED OFF",
         .hint = NULL,
-        .func = &cmd_event2,
+        .func = cmd_led_off,
         .argtable = NULL
     };
 
-    const esp_console_cmd_t cmd3 = {
-        .command = "event3",
-        .help = "Wywołaj event3",
+    const esp_console_cmd_t led_toggle_cmd = {
+        .command = "led_toggle",
+        .help = "Toggle LED state",
         .hint = NULL,
-        .func = &cmd_event3,
+        .func = cmd_led_toggle,
         .argtable = NULL
     };
 
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd1));
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd2));
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd3));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&led_on_cmd));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&led_off_cmd));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&led_toggle_cmd));
 }
 
-static int cmd_event1(int argc, char **argv)
+static int cmd_led_on(int argc, char **argv)
 {
-    app_event_t event = {
-        .type = EVENT_LED_ON
-    };
+    drv_led_request(DRV_LED_EVENT_ON);
 
-    event_bus_emit(&event);
-
-    ESP_LOGI(TAG, "EVENT_LED_ON sent");
+    ESP_LOGI(TAG, "EVENT_LED_ON emitted");
     return 0;
 }
 
-static int cmd_event2(int argc, char **argv)
+static int cmd_led_off(int argc, char **argv)
 {
-    app_event_t event = {
-        .type = EVENT_LED_OFF
-    };
+    drv_led_request(DRV_LED_EVENT_OFF);
 
-    event_bus_emit(&event);
-
-    ESP_LOGI(TAG, "EVENT_LED_OFF sent");
+    ESP_LOGI(TAG, "EVENT_LED_OFF emitted");
     return 0;
 }
 
-static int cmd_event3(int argc, char **argv)
+static int cmd_led_toggle(int argc, char **argv)
 {
-    app_event_t event = {
-        .type = EVENT_LED_TOGGLE
-    };
+    drv_led_request(DRV_LED_EVENT_TOGGLE);
 
-    event_bus_emit(&event);
-
-    ESP_LOGI(TAG, "EVENT_LED_TOGGLE sent");
+    ESP_LOGI(TAG, "EVENT_LED_TOGGLE emitted");
     return 0;
 }
