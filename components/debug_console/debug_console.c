@@ -4,6 +4,7 @@
 #include "debug_console.h"
 #include "event_bus.h"
 #include "drv_led.h"
+#include "app_config.h"
 
 #include "esp_log.h"
 #include "esp_console.h"
@@ -50,7 +51,8 @@ void debug_console_init(void)
 
     debug_console_register_commands();
 
-    BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", 4096, NULL, 5, NULL);
+    BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", APP_TASK_STACK_DEBUG_CONSOLE, 
+                                    NULL, APP_TASK_PRIO_DEBUG_CONSOLE, NULL);
 
     configASSERT(ret == pdPASS);
 }

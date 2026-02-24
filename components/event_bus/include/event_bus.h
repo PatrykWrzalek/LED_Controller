@@ -70,7 +70,17 @@ void event_bus_init(void);
 bool event_bus_emit(const app_event_t *event);
 
 /**
- * @brief Returns internal queue handle.
+ * @brief       Emit event (blocking version).
+ * @param event Pointer to event structure.
+ * @param ticks Maximum time to wait for free space.
+ * @return      true if event was queued.
+ * @return      false on timeout or error.
+ */
+bool event_bus_emit_blocking(const app_event_t *event, TickType_t ticks);
+
+/**
+ * @brief  Returns internal queue handle.
+ * @return QueueHandle_t
  */
 QueueHandle_t event_bus_get_queue(void);
 
