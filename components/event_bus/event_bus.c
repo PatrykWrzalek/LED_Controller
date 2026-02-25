@@ -19,7 +19,7 @@ void event_bus_init(void)
 {
     configASSERT(s_event_queue == NULL);
 
-    s_event_queue = xQueueCreate(10, sizeof(app_event_t));
+    s_event_queue = xQueueCreate(CONFIG_EVENT_BUS_QUEUE_LENGTH, sizeof(app_event_t));
     configASSERT(s_event_queue != NULL);
 }
 

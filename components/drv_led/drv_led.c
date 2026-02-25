@@ -3,7 +3,6 @@
 //--------------------------------------------------------------------------------------------
 #include "drv_led.h"
 #include "event_bus.h"
-#include "app_config.h"
 
 #include "esp_log.h"
 #include "esp_err.h"
@@ -60,8 +59,8 @@ void drv_led_init(void)
 
 void drv_led_start_task(void)
 {
-    BaseType_t ret = xTaskCreate(drv_led_task, "led_task", APP_TASK_STACK_DRV_LED, 
-                                    NULL, APP_TASK_PRIO_DRV_LED, NULL);
+    BaseType_t ret = xTaskCreate(drv_led_task, "led_task", CONFIG_DRV_LED_TASK_STACK_SIZE, 
+                                    NULL, CONFIG_DRV_LED_TASK_PRIORITY, NULL);
     configASSERT(ret == pdPASS);
 }
 
