@@ -20,11 +20,14 @@
 //--------------------------------------------------------------------------------------------
 
 static void debug_console_task(void *arg);
+
+#if CONFIG_DRV_LED_ENABLE
 static void debug_console_register_commands(void);
 
 static int cmd_led_on(int argc, char **argv);
 static int cmd_led_off(int argc, char **argv);
 static int cmd_led_toggle(int argc, char **argv);
+#endif
 
 //--------------------------------------------------------------------------------------------
 // Variables
@@ -48,7 +51,9 @@ void debug_console_init(void)
 
     esp_console_register_help_command();
 
+#if CONFIG_DRV_LED_ENABLE
     debug_console_register_commands();
+#endif
 
     BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", CONFIG_DEBUG_CONSOLE_TASK_STACK_SIZE, 
                                     NULL, CONFIG_DEBUG_CONSOLE_TASK_PRIORITY, NULL);
@@ -77,6 +82,7 @@ static void debug_console_task(void *arg)
     vTaskDelete(NULL);
 }
 
+#if CONFIG_DRV_LED_ENABLE
 static void debug_console_register_commands(void)
 {
     const esp_console_cmd_t led_on_cmd = {
@@ -131,3 +137,4 @@ static int cmd_led_toggle(int argc, char **argv)
     ESP_LOGI(TAG, "EVENT_LED_TOGGLE emitted");
     return 0;
 }
+#endif

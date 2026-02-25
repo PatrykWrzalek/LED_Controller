@@ -5,7 +5,21 @@
 #include "event_bus.h"
 
 #include "esp_log.h"
-#include "esp_err.h"
+
+#if CONFIG_DRV_LED_ENABLE
+
+//--------------------------------------------------------------------------------------------
+// Defines
+//--------------------------------------------------------------------------------------------
+
+#define LED_PWM_FREQ_HZ     2
+#define LED_PWM_RESOLUTION  LEDC_TIMER_13_BIT
+#define LED_PWM_MODE        LEDC_LOW_SPEED_MODE
+#define LED_PWM_TIMER       LEDC_TIMER_0
+
+#define LED_CHANNEL_STATUS  LEDC_CHANNEL_0
+#define LED_CHANNEL_COLD    LEDC_CHANNEL_1
+#define LED_CHANNEL_WARM    LEDC_CHANNEL_2
 
 //--------------------------------------------------------------------------------------------
 // Variables
@@ -21,6 +35,7 @@ static bool _is_initialized = false;
 static void drv_led_configure_timer(void);
 static void drv_led_configure_channel(ledc_channel_t channel, gpio_num_t gpio);
 static void drv_led_set_status(uint32_t duty);
+static uint32_t drv_led_max_duty(void);
 
 static void drv_led_task(void *arg);
 
@@ -28,14 +43,12 @@ static void drv_led_task(void *arg);
 // API
 //--------------------------------------------------------------------------------------------
 
-#if CONFIG_DRV_LED_ENABLE
-
-void drv_led_init(void)
+esp_err_t drv_led_init(void)
 {
     if (_is_initialized)
     {
         ESP_LOGW(TAG, "LED already initialized");
-        return;
+        return ESP_ERR_INVALID_STATE;
     }
 
     ESP_LOGI(TAG, "Initializing LED PWM subsystem");
@@ -55,13 +68,16 @@ void drv_led_init(void)
     _is_initialized = true;
 
     ESP_LOGI(TAG, "LED PWM initialized successfully");
+
+    return ESP_OK;
 }
 
-void drv_led_start_task(void)
+esp_err_t drv_led_start_task(void)
 {
     BaseType_t ret = xTaskCreate(drv_led_task, "led_task", CONFIG_DRV_LED_TASK_STACK_SIZE, 
                                     NULL, CONFIG_DRV_LED_TASK_PRIORITY, NULL);
-    configASSERT(ret == pdPASS);
+    
+    return (ret == pdPASS) ? ESP_OK : ESP_FAIL;
 }
 
 bool drv_led_request(drv_led_event_id_t id)
@@ -74,8 +90,6 @@ bool drv_led_request(drv_led_event_id_t id)
 
     return event_bus_emit(&event);
 }
-
-#endif
 
 //--------------------------------------------------------------------------------------------
 // STATIC
@@ -169,3 +183,22 @@ static void drv_led_task(void *arg)
 
     vTaskDelete(NULL);
 }
+
+#else
+
+esp_err_t drv_led_init(void)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t drv_led_start_task(void)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+bool drv_led_request(drv_led_event_id_t id)
+{
+    return false;
+}
+
+#endif

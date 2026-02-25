@@ -1,19 +1,19 @@
 /**
  ******************************************************************************
  * @file    drv_led.h
- * @brief   LED driver abstraction layer (PWM-based).
+ * @brief   LED driver module using ESP32 LEDC (PWM) peripheral.
  *
  * @details
- * This module is responsible ONLY for:
- *  - Configuring LEDC peripheral
- *  - Controlling PWM duty
- *  - Reacting to LED-related events
+ * This module is responsible for:
+ *  - Initializing LEDC timer and channels
+ *  - Running a dedicated FreeRTOS task
+ *  - Handling LED-related events received from event bus
  *
- * It does NOT:
- *  - Contain business logic
- *  - Know who generated events
- *  - Store application state
- ******************************************************************************
+ * The module can be enabled or disabled via CONFIG_DRV_LED_ENABLE.
+ * When disabled, API functions return ESP_ERR_NOT_SUPPORTED
+ * or false (depending on return type).
+ *
+ *******************************************************************************
  */
 
 #ifndef DRV_LED_H
@@ -26,22 +26,10 @@
 
 #include "sdkconfig.h"
 
+#include "esp_err.h"
 #include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-
-//--------------------------------------------------------------------------------------------
-// Defines
-//--------------------------------------------------------------------------------------------
-
-#define LED_PWM_FREQ_HZ     2
-#define LED_PWM_RESOLUTION  LEDC_TIMER_13_BIT
-#define LED_PWM_MODE        LEDC_LOW_SPEED_MODE
-#define LED_PWM_TIMER       LEDC_TIMER_0
-
-#define LED_CHANNEL_STATUS  LEDC_CHANNEL_0
-#define LED_CHANNEL_COLD    LEDC_CHANNEL_1
-#define LED_CHANNEL_WARM    LEDC_CHANNEL_2
 
 //--------------------------------------------------------------------------------------------
 // Typedefs
@@ -62,20 +50,31 @@ typedef enum
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief Initializes LED driver hardware.
+ * @brief   Initialize LED driver.
+ * @details Configures LEDC timer and channels.
+ *          Must be called before starting the driver task.
+ * @return  - ESP_OK on success
+ *          - ESP_ERR_INVALID_STATE if already initialized
+ *          - ESP_ERR_NOT_SUPPORTED if module disabled
  */
-void drv_led_init(void);
+esp_err_t drv_led_init(void);
+
 
 /**
- * @brief Starts LED event handling task.
+ * @brief   Start LED driver FreeRTOS task.
+ * @details Creates internal LED task with parameters defined in Kconfig.
+ * @return  - ESP_OK on success
+ *          - ESP_FAIL if task creation failed
+ *          - ESP_ERR_NOT_SUPPORTED if module disabled
  */
-void drv_led_start_task(void);
+esp_err_t drv_led_start_task(void);
+
 
 /**
- * @brief         Sends an LED event through the event bus.
- * @param[in] id  LED event identifier (drv_led_event_id_t)
- * @return        true if the event was successfully sent,
- *                false otherwise
+ * @brief   Send LED request to event bus.
+ * @param   id LED event identifier.
+ * @return  - true if event was successfully queued
+ *          - false otherwise or if module disabled
  */
 bool drv_led_request(drv_led_event_id_t id);
 
