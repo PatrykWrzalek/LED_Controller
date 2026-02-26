@@ -3,6 +3,7 @@
 //--------------------------------------------------------------------------------------------
 #include "debug_console.h"
 #include "event_bus.h"
+#include "drv_led_cli.h"
 #include "drv_led.h"
 
 #include "esp_log.h"
@@ -20,14 +21,6 @@
 //--------------------------------------------------------------------------------------------
 
 static void debug_console_task(void *arg);
-
-#if CONFIG_DRV_LED_ENABLE
-static void debug_console_register_commands(void);
-
-static int cmd_led_on(int argc, char **argv);
-static int cmd_led_off(int argc, char **argv);
-static int cmd_led_toggle(int argc, char **argv);
-#endif
 
 //--------------------------------------------------------------------------------------------
 // Variables
@@ -52,7 +45,7 @@ void debug_console_init(void)
     esp_console_register_help_command();
 
 #if CONFIG_DRV_LED_ENABLE
-    debug_console_register_commands();
+    drv_led_cli_register();
 #endif
 
     BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", CONFIG_DEBUG_CONSOLE_TASK_STACK_SIZE, 
@@ -81,60 +74,3 @@ static void debug_console_task(void *arg)
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
     vTaskDelete(NULL);
 }
-
-#if CONFIG_DRV_LED_ENABLE
-static void debug_console_register_commands(void)
-{
-    const esp_console_cmd_t led_on_cmd = {
-        .command = "led_on",
-        .help = "Turn LED ON",
-        .hint = NULL,
-        .func = cmd_led_on,
-        .argtable = NULL
-    };
-
-    const esp_console_cmd_t led_off_cmd = {
-        .command = "led_off",
-        .help = "Turn LED OFF",
-        .hint = NULL,
-        .func = cmd_led_off,
-        .argtable = NULL
-    };
-
-    const esp_console_cmd_t led_toggle_cmd = {
-        .command = "led_toggle",
-        .help = "Toggle LED state",
-        .hint = NULL,
-        .func = cmd_led_toggle,
-        .argtable = NULL
-    };
-
-    ESP_ERROR_CHECK(esp_console_cmd_register(&led_on_cmd));
-    ESP_ERROR_CHECK(esp_console_cmd_register(&led_off_cmd));
-    ESP_ERROR_CHECK(esp_console_cmd_register(&led_toggle_cmd));
-}
-
-static int cmd_led_on(int argc, char **argv)
-{
-    drv_led_request(DRV_LED_EVENT_ON);
-
-    ESP_LOGI(TAG, "EVENT_LED_ON emitted");
-    return 0;
-}
-
-static int cmd_led_off(int argc, char **argv)
-{
-    drv_led_request(DRV_LED_EVENT_OFF);
-
-    ESP_LOGI(TAG, "EVENT_LED_OFF emitted");
-    return 0;
-}
-
-static int cmd_led_toggle(int argc, char **argv)
-{
-    drv_led_request(DRV_LED_EVENT_TOGGLE);
-
-    ESP_LOGI(TAG, "EVENT_LED_TOGGLE emitted");
-    return 0;
-}
-#endif
