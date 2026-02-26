@@ -24,7 +24,7 @@ The project is structured with **modular components**, making it easy to extend 
 Track progress with the checkboxes below:
 
 - [x] Hello World / ESP32-C6 Setup  
-- [ ] Console setup for early debugging  
+- [x] Console setup for early debugging  
 - [ ] Watchdog integration  
 - [ ] FreeRTOS task architecture & event queues  
 - [ ] PWM LED control (light COLD & WARM)  
