@@ -1,0 +1,43 @@
+menu "DRV LED Configuration"
+
+config DRV_LED_ENABLE
+    bool "Enable LED driver"
+    default y
+    help
+      Enable the LED driver component.
+
+if DRV_LED_ENABLE
+
+  config LED_GPIO_STATUS
+      int "Status LED GPIO number"
+      default 15
+      help
+        The GPIO pin number connected to the status LED.
+
+  config DRV_COLD_LED_ENABLE
+      bool "Enable cold LED"
+      default n
+      help
+        Enable the cold LED.
+
+  config LED_GPIO_COLD
+      int "Cold LED GPIO number"
+      default 16
+      help
+        The GPIO pin number connected to the cold LED.
+
+  config DRV_WARM_LED_ENABLE
+      bool "Enable warm LED"
+      default n
+      help
+        Enable the warm LED.
+
+  config LED_GPIO_WARM
+      int "Warm LED GPIO number"
+      default 17
+      help
+        The GPIO pin number connected to the warm LED.
+
+endif
+
+endmenu

@@ -1,0 +1,54 @@
+menu "Application Scheduler Configuration"
+
+if DRV_LED_ENABLE
+
+menu "LED Task Configuration"
+
+    config DRV_LED_TASK_PRIORITY
+        int "Task priority"
+        default 4
+        range 1 24
+        help
+            FreeRTOS priority for LED driver task.
+
+    config DRV_LED_TASK_STACK_SIZE
+        int "Stack size (bytes)"
+        default 4096
+        range 2048 16384
+        help
+            Stack size (in bytes) for LED driver task.
+
+endmenu
+
+endif
+
+menu "Debug Console Task Configuration"
+
+    config DEBUG_CONSOLE_TASK_PRIORITY
+        int "Debug console task priority"
+        default 5
+        range 1 24
+        help
+            FreeRTOS priority for debug console task.
+
+    config DEBUG_CONSOLE_TASK_STACK_SIZE
+        int "Debug console task stack size"
+        default 4096
+        range 1024 16384
+        help
+            Stack size (in bytes) for debug console task.
+
+endmenu
+
+menu "Event Bus Configuration"
+
+    config EVENT_BUS_QUEUE_LENGTH
+        int "Event bus queue length"
+        default 10
+        range 1 50
+        help
+            Length of the FreeRTOS queue used as event bus.
+
+endmenu
+
+endmenu
