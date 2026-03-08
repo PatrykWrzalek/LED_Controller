@@ -1,0 +1,21 @@
+menu "Service System Monitor Configuration"
+    
+config SYSTEM_MONITOR_ENABLE
+    bool "Enable System Monitor"
+    default y
+    help
+        Enable the System Monitor service.
+
+if SYSTEM_MONITOR_ENABLE
+
+    config SYSTEM_MONITOR_PERIOD_MS
+        int "System Monitor Period"
+        default 10000
+        help
+            The System Monitor Print Period in ms.
+
+# CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+# CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+endif
+
+endmenu
