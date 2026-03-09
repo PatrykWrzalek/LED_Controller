@@ -3,6 +3,7 @@
 //--------------------------------------------------------------------------------------------
 #include "drv_led.h"
 #include "event_bus.h"
+#include "system_monitor.h"
 
 #include "esp_log.h"
 
@@ -74,7 +75,7 @@ esp_err_t drv_led_init(void)
 
 esp_err_t drv_led_start_task(void)
 {
-    BaseType_t ret = xTaskCreate(drv_led_task, "led_task", CONFIG_DRV_LED_TASK_STACK_SIZE, 
+    BaseType_t ret = xTaskCreate(drv_led_task, TAG, CONFIG_DRV_LED_TASK_STACK_SIZE, 
                                     NULL, CONFIG_DRV_LED_TASK_PRIORITY, NULL);
     
     return (ret == pdPASS) ? ESP_OK : ESP_FAIL;
@@ -147,11 +148,12 @@ static void drv_led_task(void *arg)
     app_event_t event;
 
     ESP_LOGI(TAG, "LED task started");
+    // system_monitor_heartbeat(SYSTEM_TASK_LED);
     drv_led_set_status(drv_led_max_duty()/2);
 
     while (1)
     {
-        if (xQueueReceive(queue, &event, portMAX_DELAY) == pdTRUE)
+        if (xQueueReceive(queue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             if (event.module != APP_EVENT_MODULE_LED)
             {
@@ -179,6 +181,9 @@ static void drv_led_task(void *arg)
                     break;
             }
         }
+
+        // system_monitor_heartbeat(SYSTEM_TASK_LED);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     vTaskDelete(NULL);

@@ -2,9 +2,8 @@
 // Includes
 //--------------------------------------------------------------------------------------------
 #include "debug_console.h"
-#include "event_bus.h"
 #include "drv_led_cli.h"
-#include "drv_led.h"
+#include "system_monitor_cli.h"
 
 #include "esp_log.h"
 #include "esp_console.h"
@@ -26,32 +25,46 @@ static void debug_console_task(void *arg);
 // Variables
 //--------------------------------------------------------------------------------------------
 
-// static const char *TAG = "debug_console";
+static const char *TAG = "debug_console";
 
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
 
-void debug_console_init(void)
+esp_err_t debug_console_init(void)
 {
+    ESP_LOGI(TAG, "Initializing debug console");
+
     // NVS init
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        nvs_flash_erase();
-        nvs_flash_init();
+        ESP_LOGW(TAG, "NVS partition invalid, erasing...");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
     }
 
+    ESP_ERROR_CHECK(err);
+
+    // Register built-in help command
     esp_console_register_help_command();
+
+    // system_monitor_cli_register();   // TODO
 
 #if CONFIG_DRV_LED_ENABLE
     drv_led_cli_register();
 #endif
 
-    BaseType_t ret = xTaskCreate(debug_console_task, "debug_console", CONFIG_DEBUG_CONSOLE_TASK_STACK_SIZE, 
+    BaseType_t ret = xTaskCreate(debug_console_task, TAG, CONFIG_DEBUG_CONSOLE_TASK_STACK_SIZE, 
                                     NULL, CONFIG_DEBUG_CONSOLE_TASK_PRIORITY, NULL);
 
-    configASSERT(ret == pdPASS);
+    if (ret != pdPASS)
+    {
+        ESP_LOGE(TAG, "Failed to create console task");
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -60,6 +73,8 @@ void debug_console_init(void)
 
 static void debug_console_task(void *arg)
 {
+    ESP_LOGI(TAG, "Starting console REPL");
+
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt = PROMPT_STR;

@@ -1,33 +1,28 @@
 /**
  ******************************************************************************
- * @file    app.h
- * @brief   Application entry module.
+ * @file    system_monitor_cli.h
+ * @brief   CLI commands for system monitor module.
  *
  * @details
- * Responsible for initializing core system components and starting
- * application modules.
+ * Registers debug console commands to interact with the system monitor module.
  ******************************************************************************
  */
 
-#ifndef APP_H
-#define APP_H
+#ifndef SYSTEM_MONITOR_CLI_H
+#define SYSTEM_MONITOR_CLI_H
 
 //--------------------------------------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------------------------------------
-#include "esp_err.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
+#include "system_monitor.h"
 
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief   Start application.
- * @details Initializes system modules and starts application tasks.
+ * @brief Register CLI commands for system monitoring.
  */
-void app_start(void);
+void system_monitor_cli_register(void);
 
-#endif /* APP_H */
+#endif /* SYSTEM_MONITOR_CLI_H */

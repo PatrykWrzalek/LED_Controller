@@ -2,10 +2,14 @@
  ******************************************************************************
  * @file    system_monitor.h
  * @brief   System monitoring utilities for FreeRTOS tasks and ESP heap.
- * @details Provides functions to initialize a system monitor task, report task
- *          heartbeats, and dump runtime statistics, heap usage, and stack
- *          high-water marks. Useful for debugging and monitoring embedded
- *          applications running on ESP32 with FreeRTOS.
+ *
+ * @details
+ * Provides functions to:
+ *  - initialize a system monitor task
+ *  - report task heartbeats
+ *  - dump runtime statistics, heap usage, and stack high-water marks
+ *
+ * Useful for debugging and monitoring embedded ESP32 applications.
  ******************************************************************************
  */
 
@@ -15,19 +19,26 @@
 //--------------------------------------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------------------------------------
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
 
-#include "sdkconfig.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+#include "sdkconfig.h"
+
+#include "esp_err.h"
+
 //--------------------------------------------------------------------------------------------
 // Typedefs
 //--------------------------------------------------------------------------------------------
+
+typedef enum
+{
+    SYSTEM_TASK_LED = 0,
+    SYSTEM_TASK_MAX
+} system_task_id_t;
 
 /**
  * @brief Generic service event container.
@@ -43,15 +54,24 @@ typedef enum
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief Initialize the system monitor task.
+ * @brief   Initialize the system monitor task.
+ * @details Creates a FreeRTOS task that periodically prints runtime stats, heap usage,
+ *          and stack high-water marks. Must be called once during system startup.
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_ERR_INVALID_STATE if already initialized
+ *  - ESP_FAIL if task creation failed
  */
-void system_monitor_init(void);
+esp_err_t system_monitor_init(void);
 
 /**
- * @brief Report a heartbeat from a task.
- * @param task_name Null-terminated name of the task sending the heartbeat.
+ * @brief     Send heartbeat event from a task.
+ * @param[in] task_name Null-terminated task name.
+ * @return
+ *  - true if event was queued successfully
+ *  - false if queue is full or not initialized
  */
-void system_monitor_heartbeat(const char *task_name);
+bool system_monitor_heartbeat(system_task_id_t task);   // TODO: zrobić działające system_monitor_heartbeat
 
 /**
  * @brief Print FreeRTOS task runtime statistics.

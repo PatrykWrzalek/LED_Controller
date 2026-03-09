@@ -26,6 +26,7 @@ typedef enum
 {
     APP_EVENT_MODULE_LED = 0,
     APP_EVENT_MODULE_SYSTEM,
+    APP_EVENT_MODULE_SYSTEM_MONITOR,
     APP_EVENT_MODULE_CONSOLE
 } app_event_module_t;
 

@@ -22,8 +22,7 @@
 //--------------------------------------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------------------------------------
-#include <stdio.h>
-#include <string.h>
+#include "esp_err.h"
 
 //--------------------------------------------------------------------------------------------
 // API
@@ -32,6 +31,6 @@
 /**
  * @brief Initialize debug console subsystem.
  */
-void debug_console_init(void);
+esp_err_t debug_console_init(void);
 
 #endif /* DEBUG_CONSOLE_H */

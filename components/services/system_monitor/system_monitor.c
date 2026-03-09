@@ -2,9 +2,13 @@
 // Includes
 //--------------------------------------------------------------------------------------------
 #include "system_monitor.h"
-#include "esp_log.h"
+#include "app_event.h"
+#include "event_bus.h"
 
-#if CONFIG_SYSTEM_MONITOR_ENABLE
+#include <stdlib.h>
+
+#include "esp_log.h"
+#include "esp_heap_caps.h"
 
 //--------------------------------------------------------------------------------------------
 // Static function prototypes
@@ -17,21 +21,53 @@ static void system_monitor_task(void *arg);
 //--------------------------------------------------------------------------------------------
 
 static const char *TAG = "system_monitor";
-QueueHandle_t monitor_queue;
-TaskHandle_t monitor_task;
+
+static TaskHandle_t s_task_handle = NULL;
+static bool s_initialized = false;
 
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
 
-void system_monitor_init(void)
+esp_err_t system_monitor_init(void)
 {
-    xTaskCreate(system_monitor_task, "system_monitor", 4096, NULL, 3, NULL);
+    if (s_initialized)
+    {
+        ESP_LOGW(TAG, "System monitor already initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    BaseType_t ret = xTaskCreate(system_monitor_task, "system_monitor", CONFIG_SYSTEM_MONITOR_TASK_STACK_SIZE,
+                                    NULL, CONFIG_SYSTEM_MONITOR_TASK_PRIORITY, &s_task_handle);
+
+    if (ret != pdPASS || s_task_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to create system monitor task");
+        return ESP_FAIL;
+    }
+
+    s_initialized = true;
+
+    ESP_LOGI(TAG, "System monitor initialized");
+
+    return ESP_OK;
 }
 
-void system_monitor_heartbeat(const char *task_name)
+bool system_monitor_heartbeat(system_task_id_t task)
 {
-    ESP_LOGD(TAG, "Heartbeat from %s", task_name);
+    if (!s_initialized || task < SYSTEM_TASK_MAX)
+    {
+        return false;
+    }
+
+    app_event_t event = {
+        .module = APP_EVENT_MODULE_SYSTEM_MONITOR,
+        .id     = SYSTEM_MONITOR_EVENT_HEARTBEAT,
+        .param  = 0
+    };
+
+    ESP_LOGD(TAG, "Heartbeat from %d", task);
+    return event_bus_emit(&event);
 }
 
 void system_monitor_print_runtime(void)
@@ -54,13 +90,19 @@ void system_monitor_print_heap(void)
 
 void system_monitor_print_stack(void)
 {
-    UBaseType_t tasks = uxTaskGetNumberOfTasks();
+    UBaseType_t task_count = uxTaskGetNumberOfTasks();
 
-    TaskStatus_t *status = malloc(tasks * sizeof(TaskStatus_t));
+    TaskStatus_t *status = malloc(task_count * sizeof(TaskStatus_t));
 
-    tasks = uxTaskGetSystemState(status, tasks, NULL);
+    if (!status)
+    {
+        ESP_LOGE(TAG, "Failed to allocate memory for task status");
+        return;
+    }
 
-    for (int i = 0; i < tasks; i++)
+    task_count = uxTaskGetSystemState(status, task_count, NULL);
+
+    for (int i = 0; i < task_count; i++)
     {
         ESP_LOGI(TAG, "Task: %s stack watermark: %u", status[i].pcTaskName, (unsigned)status[i].usStackHighWaterMark);
     }
@@ -74,14 +116,38 @@ void system_monitor_print_stack(void)
 
 static void system_monitor_task(void *arg)
 {
+    QueueHandle_t queue = event_bus_get_queue();
+    configASSERT(queue != NULL);
+
+    app_event_t event;
+
+    ESP_LOGI(TAG, "System monitor task started");
+
     while (true)
     {
-        system_monitor_print_runtime();
-        system_monitor_print_heap();
-        system_monitor_print_stack();
+        if (xQueueReceive(queue, &event, pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS)) == pdTRUE)
+        {
+            if (event.module != APP_EVENT_MODULE_SYSTEM_MONITOR)
+                continue;
 
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS));
+            switch (event.id)
+            {
+                case SYSTEM_MONITOR_EVENT_DUMP_STATS:
+                    system_monitor_print_runtime();
+                    system_monitor_print_heap();
+                    system_monitor_print_stack();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            system_monitor_print_heap();
+            vTaskDelay(pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS));
+        }
     }
-}
 
-#endif
+    vTaskDelete(NULL);
+}

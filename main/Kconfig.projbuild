@@ -26,7 +26,7 @@ menu "Debug Console Task Configuration"
 
     config DEBUG_CONSOLE_TASK_PRIORITY
         int "Debug console task priority"
-        default 5
+        default 3
         range 1 24
         help
             FreeRTOS priority for debug console task.
@@ -37,6 +37,30 @@ menu "Debug Console Task Configuration"
         range 1024 16384
         help
             Stack size (in bytes) for debug console task.
+
+endmenu
+
+menu "System Monitor Task Configuration"
+
+    config SYSTEM_MONITOR_TASK_PRIORITY
+        int "System monitor task priority"
+        default 2
+        range 1 24
+        help
+            FreeRTOS priority for system monitor task.
+
+    config SYSTEM_MONITOR_TASK_STACK_SIZE
+        int "System monitor task stack size"
+        default 4096
+        range 1024 16384
+        help
+            Stack size (in bytes) for system monitor task.
+
+    config SYSTEM_MONITOR_PERIOD_MS
+        int "System Monitor Period"
+        default 10000
+        help
+            The System Monitor Print Period in ms.
 
 endmenu
 

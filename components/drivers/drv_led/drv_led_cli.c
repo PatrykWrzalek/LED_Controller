@@ -2,7 +2,6 @@
 // Includes
 //--------------------------------------------------------------------------------------------
 #include "drv_led_cli.h"
-#include "drv_led.h"
 #include "esp_console.h"
 
 #if CONFIG_DRV_LED_ENABLE

@@ -13,7 +13,10 @@
  *  - Modules consume events.
  *  - event_bus is only responsible for transport (no logic).
  *
- * This improves scalability, modularity and testability.
+ * Advantages:
+ *  - loose coupling
+ *  - improved scalability
+ *  - easier testing
  ******************************************************************************
  */
 
@@ -23,7 +26,6 @@
 //--------------------------------------------------------------------------------------------
 // Includes
 //--------------------------------------------------------------------------------------------
-#include <stdio.h>
 #include <stdbool.h>
 
 #include "freertos/FreeRTOS.h"
@@ -36,31 +38,40 @@
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief       Initializes the event bus.
- * @details     Creates a FreeRTOS queue used for system-wide event exchange.
+ * @brief   Initialize event bus subsystem.
+ * @details Creates internal FreeRTOS queue used for system-wide event exchange.
+ *          Must be called once during system startup before any module emits events.
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_ERR_INVALID_STATE if already initialized
+ *  - ESP_FAIL if queue allocation failed
  */
-void event_bus_init(void);
+esp_err_t event_bus_init(void);
 
 /**
- * @brief       Sends an event to the system.
+ * @brief       Emit event (non-blocking).
  * @param[in]   event Pointer to event structure.
- * @return      true if event was queued successfully
- * @return      false if queue is full or not initialized
+ * @return
+ *  - true if event was queued successfully
+ *  - false if queue is full or not initialized
  */
 bool event_bus_emit(const app_event_t *event);
 
 /**
  * @brief       Emit event (blocking version).
- * @param event Pointer to event structure.
- * @param ticks Maximum time to wait for free space.
- * @return      true if event was queued.
- * @return      false on timeout or error.
+ * @details     Waits for free space in queue up to specified timeout.
+ * @param[in]   event Pointer to event structure.
+ * @param[in]   ticks Maximum time to wait for free queue space.
+ * @return
+ *  - true if event was queued successfully
+ *  - false on timeout or if bus not initialized
  */
 bool event_bus_emit_blocking(const app_event_t *event, TickType_t ticks);
 
 /**
- * @brief  Returns internal queue handle.
- * @return QueueHandle_t
+ * @brief   Get internal queue handle.
+ * @details Used by modules that consume events.
+ * @return  Queue handle or NULL if bus not initialized.
  */
 QueueHandle_t event_bus_get_queue(void);
 
