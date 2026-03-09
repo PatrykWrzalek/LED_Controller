@@ -4,6 +4,8 @@
 #include "system_monitor.h"
 #include "esp_log.h"
 
+#if CONFIG_SYSTEM_MONITOR_ENABLE
+
 //--------------------------------------------------------------------------------------------
 // Static function prototypes
 //--------------------------------------------------------------------------------------------
@@ -60,7 +62,7 @@ void system_monitor_print_stack(void)
 
     for (int i = 0; i < tasks; i++)
     {
-        ESP_LOGI(TAG, "Task: %s stack watermark: %u", status[i].pcTaskName, status[i].usStackHighWaterMark);
+        ESP_LOGI(TAG, "Task: %s stack watermark: %u", status[i].pcTaskName, (unsigned)status[i].usStackHighWaterMark);
     }
 
     free(status);
@@ -81,3 +83,5 @@ static void system_monitor_task(void *arg)
         vTaskDelay(pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS));
     }
 }
+
+#endif

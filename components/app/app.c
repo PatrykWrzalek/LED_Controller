@@ -2,11 +2,33 @@
 // Includes
 //--------------------------------------------------------------------------------------------
 #include "app.h"
+#include "drv_led.h"
+#include "event_bus.h"
+#include "debug_console.h"
+
+#include "esp_log.h"
+
+//--------------------------------------------------------------------------------------------
+// Variables
+//--------------------------------------------------------------------------------------------
+
+static const char *TAG = "app";
 
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
 
-void func(void)
+void app_start(void)
 {
+    ESP_LOGI(TAG, "Init event bus");
+    event_bus_init();
+
+    ESP_LOGI(TAG, "Init debug console");
+    debug_console_init();
+
+    ESP_LOGI(TAG, "Init LED driver");
+    drv_led_init();
+
+    ESP_LOGI(TAG, "Start LED task");
+    drv_led_start_task();
 }

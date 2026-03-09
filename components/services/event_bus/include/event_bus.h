@@ -29,27 +29,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-//--------------------------------------------------------------------------------------------
-// Typedefs
-//--------------------------------------------------------------------------------------------
-
-/**
- * @brief Global event module identifier.
- */
-typedef enum
-{
-    APP_EVENT_MODULE_LED = 0,
-} app_event_module_t;
-
-/**
- * @brief Generic application event container.
- */
-typedef struct
-{
-    app_event_module_t module;   /* Module identifier */
-    uint32_t           id;       /* Event ID (module specific) */
-    uint32_t           param;    /* Optional parameter (brightness etc.) */
-} app_event_t;
+#include "app_event.h"
 
 //--------------------------------------------------------------------------------------------
 // API
