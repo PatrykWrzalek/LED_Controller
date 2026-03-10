@@ -6,9 +6,11 @@
 #include "event_bus.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
 
 //--------------------------------------------------------------------------------------------
 // Static function prototypes
@@ -25,6 +27,8 @@ static const char *TAG = "system_monitor";
 static TaskHandle_t s_task_handle = NULL;
 static bool s_initialized = false;
 
+static int64_t s_last_heartbeat[SYSTEM_TASK_MAX];
+
 //--------------------------------------------------------------------------------------------
 // API
 //--------------------------------------------------------------------------------------------
@@ -37,7 +41,9 @@ esp_err_t system_monitor_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    BaseType_t ret = xTaskCreate(system_monitor_task, "system_monitor", CONFIG_SYSTEM_MONITOR_TASK_STACK_SIZE,
+    memset(s_last_heartbeat, 0, sizeof(s_last_heartbeat));
+
+    BaseType_t ret = xTaskCreate(system_monitor_task, TAG, CONFIG_SYSTEM_MONITOR_TASK_STACK_SIZE,
                                     NULL, CONFIG_SYSTEM_MONITOR_TASK_PRIORITY, &s_task_handle);
 
     if (ret != pdPASS || s_task_handle == NULL)
@@ -55,15 +61,17 @@ esp_err_t system_monitor_init(void)
 
 bool system_monitor_heartbeat(system_task_id_t task)
 {
-    if (!s_initialized || task < SYSTEM_TASK_MAX)
+    if (!s_initialized || task >= SYSTEM_TASK_MAX)
     {
         return false;
     }
 
+    s_last_heartbeat[task] = esp_timer_get_time();
+
     app_event_t event = {
         .module = APP_EVENT_MODULE_SYSTEM_MONITOR,
         .id     = SYSTEM_MONITOR_EVENT_HEARTBEAT,
-        .param  = 0
+        .param  = task
     };
 
     ESP_LOGD(TAG, "Heartbeat from %d", task);
@@ -72,11 +80,41 @@ bool system_monitor_heartbeat(system_task_id_t task)
 
 void system_monitor_print_runtime(void)
 {
-    char buffer[512];
+    UBaseType_t task_count = uxTaskGetNumberOfTasks();
 
-    vTaskGetRunTimeStats(buffer);
+    TaskStatus_t *task_status = malloc(task_count * sizeof(TaskStatus_t));
 
-    ESP_LOGI(TAG, "\nTask Runtime Stats:\n%s", buffer);
+    if (!task_status)
+    {
+        ESP_LOGE(TAG, "Failed to allocate memory for task status");
+        return;
+    }
+    uint32_t total_runtime = 0;
+
+    task_count = uxTaskGetSystemState(task_status, task_count, &total_runtime);
+
+    if (total_runtime == 0)
+    {
+        ESP_LOGW(TAG, "Total runtime is zero");
+        free(task_status);
+        return;
+    }
+
+    ESP_LOGI(TAG, "---------------- Runtime stats ----------------");
+    ESP_LOGI(TAG, "%-16s %10s %8s", "Task", "Runtime", "CPU %");
+
+    for (UBaseType_t i = 0; i < task_count; i++)
+    {
+        uint32_t runtime = task_status[i].ulRunTimeCounter;
+        uint32_t percent = (runtime * 100UL) / total_runtime;
+
+        ESP_LOGI(TAG, "%-16s %10lu %7lu%%",
+                 task_status[i].pcTaskName, runtime, percent);
+    }
+
+    ESP_LOGI(TAG, "----------------------------------------------");
+
+    free(task_status);
 }
 
 void system_monitor_print_heap(void)
@@ -132,6 +170,19 @@ static void system_monitor_task(void *arg)
 
             switch (event.id)
             {
+                case SYSTEM_MONITOR_EVENT_HEARTBEAT:
+                    system_task_id_t task = event.param;
+
+                    if (task < SYSTEM_TASK_MAX)
+                    {
+                        int64_t now = esp_timer_get_time();
+                        int64_t diff = now - s_last_heartbeat[task];
+
+                        ESP_LOGD(TAG, "Heartbeat task %d (%lld ms ago)",
+                                 task, diff / 1000);
+                    }
+                    break;
+
                 case SYSTEM_MONITOR_EVENT_DUMP_STATS:
                     system_monitor_print_runtime();
                     system_monitor_print_heap();
@@ -145,7 +196,6 @@ static void system_monitor_task(void *arg)
         else
         {
             system_monitor_print_heap();
-            vTaskDelay(pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS));
         }
     }
 

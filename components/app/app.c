@@ -6,6 +6,7 @@
 #include "drv_led.h"
 #include "event_bus.h"
 #include "debug_console.h"
+#include "system_monitor.h"
 
 #include "esp_log.h"
 
@@ -33,6 +34,17 @@ void app_start(void)
     {
         ESP_LOGE(TAG, "Event bus initialization failed");
         return;
+    }
+
+    //---------------------------------------------------------------------------
+    // System monitor
+    //---------------------------------------------------------------------------
+
+    ESP_LOGI(TAG, "Initializing system monitor");
+
+    if (system_monitor_init() != ESP_OK)
+    {
+        ESP_LOGE(TAG, "System monitor initialization failed");
     }
 
     //---------------------------------------------------------------------------

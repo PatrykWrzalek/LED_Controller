@@ -49,7 +49,7 @@ esp_err_t debug_console_init(void)
     // Register built-in help command
     esp_console_register_help_command();
 
-    // system_monitor_cli_register();   // TODO
+    // system_monitor_cli_register();
 
 #if CONFIG_DRV_LED_ENABLE
     drv_led_cli_register();

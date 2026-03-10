@@ -4,7 +4,15 @@
  * @brief   CLI commands for system monitor module.
  *
  * @details
- * Registers debug console commands to interact with the system monitor module.
+ * This module registers console commands that allow runtime inspection
+ * of system diagnostics provided by the system monitor.
+ *
+ * The commands are available through the ESP-IDF console component and
+ * expose runtime information such as:
+ *
+ *  - CPU usage per FreeRTOS task
+ *  - heap usage statistics
+ *  - stack high-water marks
  ******************************************************************************
  */
 
@@ -21,7 +29,10 @@
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief Register CLI commands for system monitoring.
+ * @brief   Register CLI commands for the system monitor module.
+ * @details Registers console commands that expose system diagnostic information.
+ *          This function should be called during application initialization after
+ *          the ESP console subsystem has been initialized.
  */
 void system_monitor_cli_register(void);
 

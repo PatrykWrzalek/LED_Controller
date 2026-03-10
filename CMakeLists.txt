@@ -9,8 +9,8 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 set(EXTRA_COMPONENT_DIRS
     components/drivers
     components/hal
-    components/services
     components/interface
+    components/services
 )
 
 project(LED_Controller)
