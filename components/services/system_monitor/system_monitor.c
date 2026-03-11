@@ -195,7 +195,7 @@ static void system_monitor_task(void *arg)
         }
         else
         {
-            system_monitor_print_heap();
+            // system_monitor_print_heap();
         }
     }
 
