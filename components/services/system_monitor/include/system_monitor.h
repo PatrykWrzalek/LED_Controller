@@ -101,12 +101,4 @@ void system_monitor_print_heap(void);
  */
 void system_monitor_print_stack(void);
 
-/**
- * @brief   Register CLI commands for the system monitor module.
- * @details Registers console commands that expose system diagnostic information.
- *          This function should be called during application initialization after
- *          the ESP console subsystem has been initialized.
- */
-void system_monitor_cli_register(void);
-
 #endif /* SYSTEM_MONITOR_H */

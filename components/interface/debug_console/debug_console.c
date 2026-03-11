@@ -3,7 +3,7 @@
 //--------------------------------------------------------------------------------------------
 #include "debug_console.h"
 #include "drv_led_cli.h"
-#include "system_monitor.h"
+#include "system_monitor_cli.h"
 
 #include "esp_log.h"
 #include "esp_console.h"
@@ -49,7 +49,7 @@ esp_err_t debug_console_init(void)
     // Register built-in help command
     esp_console_register_help_command();
 
-    system_monitor_cli_register();
+    // system_monitor_cli_register();
 
 #if CONFIG_DRV_LED_ENABLE
     drv_led_cli_register();
