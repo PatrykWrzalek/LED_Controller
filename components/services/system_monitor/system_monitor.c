@@ -13,10 +13,31 @@
 #include "esp_timer.h"
 
 //--------------------------------------------------------------------------------------------
+// Defines
+//--------------------------------------------------------------------------------------------
+
+#define SYSTEM_MONITOR_MAX_TASKS 16
+#define SYSTEM_MONITOR_TLS_SLOT  0
+#define SYSTEM_MONITOR_TIMEOUT_MS 2000
+
+//--------------------------------------------------------------------------------------------
+// Typedefs
+//--------------------------------------------------------------------------------------------
+
+typedef struct
+{
+    TaskHandle_t handle;
+    const char *name;
+    int64_t last_heartbeat;
+    bool alive;
+} system_monitor_task_entry_t;
+
+//--------------------------------------------------------------------------------------------
 // Static function prototypes
 //--------------------------------------------------------------------------------------------
 
 static void system_monitor_task(void *arg);
+static void system_monitor_check_tasks(void);
 
 //--------------------------------------------------------------------------------------------
 // Variables
@@ -27,7 +48,8 @@ static const char *TAG = "system_monitor";
 static TaskHandle_t s_task_handle = NULL;
 static bool s_initialized = false;
 
-static int64_t s_last_heartbeat[SYSTEM_TASK_MAX];
+static system_monitor_task_entry_t s_tasks[SYSTEM_MONITOR_MAX_TASKS];
+static size_t s_task_count = 0;
 
 //--------------------------------------------------------------------------------------------
 // API
@@ -41,10 +63,10 @@ esp_err_t system_monitor_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    memset(s_last_heartbeat, 0, sizeof(s_last_heartbeat));
+    memset(s_tasks, 0, sizeof(s_tasks));
 
     BaseType_t ret = xTaskCreate(system_monitor_task, TAG, CONFIG_SYSTEM_MONITOR_TASK_STACK_SIZE,
-                                    NULL, CONFIG_SYSTEM_MONITOR_TASK_PRIORITY, &s_task_handle);
+                            NULL, CONFIG_SYSTEM_MONITOR_TASK_PRIORITY, &s_task_handle);
 
     if (ret != pdPASS || s_task_handle == NULL)
     {
@@ -59,23 +81,60 @@ esp_err_t system_monitor_init(void)
     return ESP_OK;
 }
 
-bool system_monitor_heartbeat(system_task_id_t task)
+void system_monitor_register_current_task(void)
 {
-    if (!s_initialized || task >= SYSTEM_TASK_MAX)
+    if (s_task_count >= SYSTEM_MONITOR_MAX_TASKS)
     {
-        return false;
+        ESP_LOGW(TAG, "Task registry full");
+        return;
     }
 
-    s_last_heartbeat[task] = esp_timer_get_time();
+    TaskHandle_t handle = xTaskGetCurrentTaskHandle();
 
-    app_event_t event = {
-        .module = APP_EVENT_MODULE_SYSTEM_MONITOR,
-        .id     = SYSTEM_MONITOR_EVENT_HEARTBEAT,
-        .param  = task
-    };
+    system_monitor_task_entry_t *entry = &s_tasks[s_task_count];
 
-    ESP_LOGD(TAG, "Heartbeat from %d", task);
-    return event_bus_emit(&event);
+    entry->handle = handle;
+    entry->name = pcTaskGetName(handle);
+    entry->last_heartbeat = esp_timer_get_time();
+    entry->alive = true;
+
+    vTaskSetThreadLocalStoragePointer(handle, SYSTEM_MONITOR_TLS_SLOT, entry);
+
+    s_task_count++;
+
+    ESP_LOGI(TAG, "Registered task: %s", entry->name);
+}
+
+void system_monitor_heartbeat(void)
+{
+    system_monitor_task_entry_t *entry =
+        pvTaskGetThreadLocalStoragePointer(NULL, SYSTEM_MONITOR_TLS_SLOT);
+
+    if (!entry)
+    {
+        return;
+    }
+
+    entry->last_heartbeat = esp_timer_get_time();
+}
+
+void system_monitor_print_tasks(void)
+{
+    int64_t now = esp_timer_get_time();
+
+    ESP_LOGI(TAG, "----------- Task health -----------");
+    ESP_LOGI(TAG, "%-16s %-8s %-10s", "Task", "Alive", "Last(ms)");
+
+    for (size_t i = 0; i < s_task_count; i++)
+    {
+        int64_t diff = now - s_tasks[i].last_heartbeat;
+
+        ESP_LOGI(TAG, "%-16s %-8s %-10lld",
+                 s_tasks[i].name, s_tasks[i].alive ? "YES" : "NO",
+                 diff / 1000);
+    }
+
+    ESP_LOGI(TAG, "-----------------------------------");
 }
 
 void system_monitor_print_runtime(void)
@@ -154,50 +213,43 @@ void system_monitor_print_stack(void)
 
 static void system_monitor_task(void *arg)
 {
-    QueueHandle_t queue = event_bus_get_queue();
-    configASSERT(queue != NULL);
-
-    app_event_t event;
-
     ESP_LOGI(TAG, "System monitor task started");
+
+    system_monitor_register_current_task();
 
     while (true)
     {
-        if (xQueueReceive(queue, &event, pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS)) == pdTRUE)
-        {
-            if (event.module != APP_EVENT_MODULE_SYSTEM_MONITOR)
-                continue;
+        system_monitor_heartbeat();
 
-            switch (event.id)
-            {
-                case SYSTEM_MONITOR_EVENT_HEARTBEAT:
-                    system_task_id_t task = event.param;
+        system_monitor_check_tasks();
 
-                    if (task < SYSTEM_TASK_MAX)
-                    {
-                        int64_t now = esp_timer_get_time();
-                        int64_t diff = now - s_last_heartbeat[task];
-
-                        ESP_LOGD(TAG, "Heartbeat task %d (%lld ms ago)",
-                                 task, diff / 1000);
-                    }
-                    break;
-
-                case SYSTEM_MONITOR_EVENT_DUMP_STATS:
-                    system_monitor_print_runtime();
-                    system_monitor_print_heap();
-                    system_monitor_print_stack();
-                    break;
-
-                default:
-                    break;
-            }
-        }
-        else
-        {
-            // system_monitor_print_heap();
-        }
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_SYSTEM_MONITOR_PERIOD_MS));
     }
 
     vTaskDelete(NULL);
+}
+
+static void system_monitor_check_tasks(void)
+{
+    int64_t now = esp_timer_get_time();
+
+    for (size_t i = 0; i < s_task_count; i++)
+    {
+        int64_t diff = now - s_tasks[i].last_heartbeat;
+
+        if (diff > (SYSTEM_MONITOR_TIMEOUT_MS * 1000))
+        {
+            if (s_tasks[i].alive)
+            {
+                ESP_LOGE(TAG, "Task %s stalled (%lld ms)",
+                         s_tasks[i].name, diff / 1000);
+            }
+
+            s_tasks[i].alive = false;
+        }
+        else
+        {
+            s_tasks[i].alive = true;
+        }
+    }
 }

@@ -35,15 +35,6 @@
 //--------------------------------------------------------------------------------------------
 
 /**
- * @brief Identifier of tasks monitored by the system monitor.
- */
-typedef enum
-{
-    SYSTEM_TASK_LED = 0,    /*!< LED control task */
-    SYSTEM_TASK_MAX         /*!< Number of monitored tasks */
-} system_task_id_t;
-
-/**
  * @brief Generic service event container.
  */
 typedef enum
@@ -69,16 +60,19 @@ typedef enum
 esp_err_t system_monitor_init(void);
 
 /**
- * @brief     Send heartbeat event from a monitored task.
- * @details   Tasks periodically call this function to inform the monitor that they
- *            are still alive. The timestamp of the heartbeat is recorded and may be
- *            used to detect stalled tasks.
- * @param[in] task Identifier of the reporting task.
- * @return
- *  - true if event was queued successfully
- *  - false if monitor is not initialized or event queue is full
+ * @brief Register current FreeRTOS task in system monitor.
  */
-bool system_monitor_heartbeat(system_task_id_t task);
+void system_monitor_register_current_task(void);
+
+/**
+ * @brief Send heartbeat from current task.
+ */
+void system_monitor_heartbeat(void);
+
+/**
+ * @brief Print task health table.
+ */
+void system_monitor_print_tasks(void);
 
 /**
  * @brief   Print FreeRTOS runtime statistics.

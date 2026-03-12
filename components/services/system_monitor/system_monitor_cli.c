@@ -8,6 +8,7 @@
 // Static function prototypes
 //--------------------------------------------------------------------------------------------
 
+static int cmd_monitor_tasks(int argc, char **argv);
 static int cmd_monitor_runtime(int argc, char **argv);
 static int cmd_monitor_heap(int argc, char **argv);
 static int cmd_monitor_stack(int argc, char **argv);
@@ -18,6 +19,14 @@ static int cmd_monitor_stack(int argc, char **argv);
 
 void system_monitor_cli_register(void)
 {
+    esp_console_cmd_t tasks_cmd = {
+        .command = "monitor_tasks",
+        .help    = "Print task health (heartbeat monitor)",
+        .hint    = NULL,
+        .func    = &cmd_monitor_tasks,
+        .argtable = NULL
+    };
+
     esp_console_cmd_t runtime_cmd = {
         .command = "monitor_runtime",
         .help    = "Print FreeRTOS task runtime statistics",
@@ -42,6 +51,7 @@ void system_monitor_cli_register(void)
         .argtable = NULL
     };
 
+    ESP_ERROR_CHECK(esp_console_cmd_register(&tasks_cmd));
     ESP_ERROR_CHECK(esp_console_cmd_register(&runtime_cmd));
     ESP_ERROR_CHECK(esp_console_cmd_register(&heap_cmd));
     ESP_ERROR_CHECK(esp_console_cmd_register(&stack_cmd));
@@ -50,6 +60,12 @@ void system_monitor_cli_register(void)
 //--------------------------------------------------------------------------------------------
 // STATIC
 //--------------------------------------------------------------------------------------------
+
+static int cmd_monitor_tasks(int argc, char **argv)
+{
+    system_monitor_print_tasks();
+    return 0;
+}
 
 static int cmd_monitor_runtime(int argc, char **argv)
 {

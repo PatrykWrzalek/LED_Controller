@@ -142,17 +142,20 @@ static void drv_led_set_status(uint32_t duty)
 
 static void drv_led_task(void *arg)
 {
+    system_monitor_register_current_task();
+
     QueueHandle_t queue = event_bus_get_queue();
     configASSERT(queue != NULL);
 
     app_event_t event;
 
     ESP_LOGI(TAG, "LED task started");
-    system_monitor_heartbeat(SYSTEM_TASK_LED);
     drv_led_set_status(drv_led_max_duty()/2);
 
     while (1)
     {
+        system_monitor_heartbeat();
+
         if (xQueueReceive(queue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             if (event.module != APP_EVENT_MODULE_LED)
@@ -181,9 +184,6 @@ static void drv_led_task(void *arg)
                     break;
             }
         }
-
-        system_monitor_heartbeat(SYSTEM_TASK_LED);
-        // vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     vTaskDelete(NULL);
